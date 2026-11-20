@@ -96,6 +96,8 @@ def refresh_states(history, n):
         rates = [_num(raw[i]) if i < len(raw) else None for i in range(n)]
         if all(r is None for r in rates):
             continue
+        if states:   # a read that lacks a trophy repeats its last print: no fake refresh from a null
+            rates = [states[-1]["rates"][i] if r is None else r for i, r in enumerate(rates)]
         try:
             h = hours(read.get("at"))
         except (ValueError, TypeError):
@@ -193,7 +195,7 @@ def forecast(case):
     x_last = lx(last["h"])
     dx = max(0.0, lx(h_target) - x_last)
     width = math.sqrt(max(dx, 0.06) / DX_REF)   # bands widen like sqrt(dx); never collapse at tiny horizons
-    ramp = min(1.0, dx / 1.0)                   # structural wave only matters at multi-day horizons
+    ramp = min(1.0, dx) ** 2                    # structural wave: a multi-day cohort effect, ~0 within hours
 
     # Latest known rate per trophy (a read may lack a trophy: fall back to older states, else 0 like the starter).
     rate = []
